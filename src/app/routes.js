@@ -33,7 +33,13 @@ module.exports = function(app, passport) {
       successRedirect : '/profile',
       failureRedirect : '/signup',
       failureFlash : true
-  }));
+    }));
+
+    app.post('/login', passport.authenticate('local-login', {
+      successRedirect : '/profile',
+      failureRedirect : '/login',
+      failureFlash : true 
+    }));
 };
 
 function isLoggedIn(req, res, next) {
