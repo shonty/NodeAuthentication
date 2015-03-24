@@ -48,6 +48,14 @@ module.exports = function(app, passport) {
             successRedirect : '/profile',
             failureRedirect : '/'
         }));
+
+    app.get('/auth/twitter', passport.authenticate('twitter', { scope : 'email' }));
+
+    app.get('/auth/twitter/callback',
+        passport.authenticate('twitter', {
+            successRedirect : '/profile',
+            failureRedirect : '/'
+        }));
 };
 
 function isLoggedIn(req, res, next) {
