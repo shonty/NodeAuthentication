@@ -83,7 +83,7 @@ module.exports = function(passport) {
         passReqToCallback: true
     },
 
-    function(token, refreshToken, profile, done) {
+    function(req, token, refreshToken, profile, done) {
 
         process.nextTick(function() {
 
@@ -93,6 +93,18 @@ module.exports = function(passport) {
                       return done(err);
 
                   if (user) {
+
+                    if (!user.facebook.token) {
+                      user.facebook.token = token;
+                      user.facebook.name = profile.name.givenName + ' ' + profile.name.familyName;
+                      user.facebook.email = profile.emails[0].value;
+
+                      user.save(function(err) {
+                        if (err)
+                          throw err;
+                        return done(null, user);
+                      });
+                    }
                       return done(null, user);
                   } else {
                       var newUser = new User();
@@ -133,26 +145,39 @@ module.exports = function(passport) {
     passport.use(new TwitterStrategy({
         consumerKey        : configAuth.twitterAuth.consumerKey,
         consumerSecret    : configAuth.twitterAuth.consumerSecret,
-        callbackURL     : configAuth.twitterAuth.callbackURL
+        callbackURL     : configAuth.twitterAuth.callbackURL,
+        passReqToCallback: true
     },
 
-    function(token, refreshToken, profile, done) {
+    function(req, token, refreshToken, profile, done) {
 
         process.nextTick(function() {
 
+          if (!req.user) {
             User.findOne({ 'twitter.id' : profile.id }, function(err, user) {
                 if (err)
                     return done(err);
 
                 if (user) {
+                    if (!user.twitter.token) {
+                      user.twitter.token = token;
+                      user.twitter.username  = profile.username;
+                      user.twitter.displayName = profile.displayName;
+
+                      user.save(function(err) {
+                        if (err)
+                          throw err;
+                        return done(null, user);
+                      });
+                    }
                     return done(null, user);
                 } else {
                     var newUser = new User();
 
                     newUser.twitter.id    = profile.id;
                     newUser.twitter.token = token;
-                    newUser.twitter.name  = profile.name.givenName + ' ' + profile.name.familyName;
-                    newUser.twitter.email = profile.emails[0].value;
+                    newUser.twitter.username  = profile.username;
+                    newUser.twitter.displayName = profile.displayName;
 
                     newUser.save(function(err) {
                         if (err)
@@ -163,6 +188,21 @@ module.exports = function(passport) {
                 }
 
             });
+          } else {
+            var user            = req.user;
+
+            user.twitter.id    = profile.id;
+            user.twitter.token = token;
+            user.twitter.username  = profile.username;
+            user.twitter.displayName = profile.displayName;
+
+            // save the user
+            user.save(function(err) {
+                if (err)
+                    throw err;
+                return done(null, user);
+            });
+          }
         });
 
     }));
@@ -170,25 +210,38 @@ module.exports = function(passport) {
     passport.use(new GoogleStrategy({
         clientID        : configAuth.googleAuth.clientID,
         clientSecret    : configAuth.googleAuth.clientSecret,
-        callbackURL     : configAuth.googleAuth.callbackURL
+        callbackURL     : configAuth.googleAuth.callbackURL,
+        passReqToCallback: true
     },
 
-    function(token, refreshToken, profile, done) {
+    function(req, token, refreshToken, profile, done) {
 
         process.nextTick(function() {
 
+          if (!req.user) {
             User.findOne({ 'google.id' : profile.id }, function(err, user) {
                 if (err)
                     return done(err);
 
                 if (user) {
+                    if (!user.google.token) {
+                      user.google.token = token;
+                      user.google.email = profile.emails[0].value;
+                      user.google.displayName = profile.displayName;
+
+                      user.save(function(err) {
+                        if (err)
+                          throw err;
+                        return done(null, user);
+                      });
+                    }
                     return done(null, user);
                 } else {
                     var newUser = new User();
 
                     newUser.google.id    = profile.id;
                     newUser.google.token = token;
-                    newUser.google.name  = profile.name.givenName + ' ' + profile.name.familyName;
+                    newUser.google.name  = profile.displayName;
                     newUser.google.email = profile.emails[0].value;
 
                     newUser.save(function(err) {
@@ -200,6 +253,21 @@ module.exports = function(passport) {
                 }
 
             });
+          } else {
+            var user            = req.user;
+
+            user.google.id    = profile.id;
+            user.google.token = token;
+            user.google.displayName  = profile.displayName;
+            user.google.email = profile.emails[0].value;
+
+            // save the user
+            user.save(function(err) {
+                if (err)
+                    throw err;
+                return done(null, user);
+            });
+          }
         });
 
     }));
